@@ -78,7 +78,10 @@ def main():
                 print('...', tr_filename, n)
                 if n > 5000 and 0:
                     break
-
+            
+            if len(record.sequence) < args.ksize:
+                    break
+   
             # get the family name
             family_name = record.name.split('|')[1]
 
