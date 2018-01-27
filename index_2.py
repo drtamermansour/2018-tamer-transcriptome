@@ -28,6 +28,7 @@ def main():
 
     kh = khmer.Nodetable(args.ksize, 1, 1)
 
+    ## store all the kmers of the compacted DBG into bbhash index
     all_kmers = []
     for n, record in enumerate(screed.open(args.unitigs)):
         if n % 10000 == 0:
@@ -42,6 +43,7 @@ def main():
 
     ###
 
+    ## create arrays of kmers and nodes of cdbg using the mphf as an array index
     mphf_to_kmer = numpy.zeros(len(all_kmers), numpy.uint64)
     mphf_to_cdbg = numpy.zeros(len(all_kmers), numpy.uint32)
 
@@ -93,9 +95,8 @@ def main():
 
                 # find cDBG ID
                 mphf = x.lookup(hashval)
-                if mphf is None:
-                    continue
-
+                #if mphf is None:
+                #    continue
                 assert mphf is not None
                 cdbg_id = mphf_to_cdbg[mphf]
 
