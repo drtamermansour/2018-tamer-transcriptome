@@ -3,6 +3,7 @@ import sys
 import argparse
 import screed
 import khmer
+from khmer.utils import write_record
 import pickle
 import numpy
 import bbhash
@@ -44,7 +45,17 @@ def main():
         return id_list
 
     n_same = 0
-    n_different = 0
+    n_fusion = 0
+    n_unmatched = 0
+    n_amb_same = 0
+    n_amb_fusion = 0
+    n_others = 0
+
+    fusion_filename = args.database + '_fusion.fa'
+    amb_fusion_filename = args.database + '_ambFusion.fa'
+
+    fusion_fp = open(fusion_filename, 'w')
+    ambfusion_fp = open(amb_fusion_filename, 'w')
 
     n = 0
     for record in screed.open(args.reads):
@@ -58,32 +69,96 @@ def main():
         if len(hashvals) <= 1:
             continue
 
+        # find a matching k-mer at the beginning of the read
         first = hashvals[0]
-        last = hashvals[-1]
-
-        # find the first unambiguously assigned k-mer
         first_ids = get_kmer_to_family_ids(first)
         idx = 1
-        while idx < len(hashvals)/2 and len(first_ids) != 1:
+        while idx < len(hashvals) and len(first_ids) == 0:
             first = hashvals[idx]
+            first_ids = get_kmer_to_family_ids(first)
             idx += 1
 
-        # find the last unambiguously assigned k-mer
-        last_ids = get_kmer_to_family_ids(last)
-        idx = len(hashvals) - 2
-        while idx > len(hashvals) / 2 and len(last_ids) != 1:
-            last = hashvals[idx]
-            idx -= 1
-
-        if len(first_ids) == 1 and len(last_ids) == 1 and \
-           first_ids == last_ids:
+        if len(first_ids) == 0:
+            print('no single match')
+            n_unmatched += 1
+        elif idx == len(hashvals):
+            print('same, only last kmer matched ')
             n_same += 1
         else:
-            print('different {} {}'.format(first_ids, last_ids))
-            n_different += 1
+            # find a matching k-mer at the end of the read
+            last = hashvals[-1]
+            last_ids = get_kmer_to_family_ids(last)
+            idy = len(hashvals) - 2
+            while idy > idx and len(last_ids) == 0:
+                last = hashvals[idy]
+                last_ids = get_kmer_to_family_ids(last)
+                idy -= 1
+            
+            if len(last_ids) == 0:
+                print('same, only first kmer matched ')
+                n_same += 1
+            elif len(first_ids) == 1 and len(last_ids) == 1:
+                if first_ids == last_ids: 
+                    n_same += 1
+                else:
+                    print('fusion class A {} {} at kmers {} {}'.format(first_ids, last_ids, idx, idy+2))
+                    n_fusion += 1
+                    write_record(record, fusion_fp)
+            else: 
+                intersect_ids = first_ids.intersection(last_ids)
+                if len(intersect_ids) > 0:
+                    n_amb_same += 1
+                else:
+                    ## try to resolve ambiguity 
+                    # find the least unambiguous interval at the beginning of the read
+                    while idx <= idy:#  and len(first_ids) > 1:
+                        first = hashvals[idx]
+                        temp_ids = get_kmer_to_family_ids(first)
+                        if len(temp_ids) == 0:
+                            idx += 1
+                        else:
+                            intersect_ids = first_ids.intersection(temp_ids)
+                            if len(intersect_ids) == 0:
+                                break
+                            else:
+                                first_ids = intersect_ids
+                                idx += 1
+
+                    # find the last unambiguous interval at the end of the read
+                    other = 0
+                    while idy >= idx:#  and len(last_ids) > 1:
+                        last = hashvals[idy]
+                        temp_ids = get_kmer_to_family_ids(last)
+                        if len(temp_ids) == 0:
+                            idy -= 1
+                        else:
+                            intersect_ids = last_ids.intersection(temp_ids)
+                            if len(intersect_ids) == 0:
+                                other = 1
+                                break
+                            else:
+                                last_ids = intersect_ids
+                                idy -= 1
+
+                    if other:
+                        print('other {} {} {}'.format(first_ids, temp_ids, last_ids))
+                        n_others += 1
+                    elif len(first_ids) == 1 and len(last_ids) == 1:
+                        print('fusion class B {} {} at kmers {} {}'.format(first_ids, last_ids, idx, idy+2))
+                        n_fusion += 1
+                        write_record(record, fusion_fp)
+                    else: 
+                        print('ambiguous fusion {} {} at kmers {} {}'.format(first_ids, last_ids, idx, idy+2))
+                        n_amb_fusion += 1
+                        ambfusion_fp
+                        write_record(record, ambfusion_fp)
 
     print('same:', n_same)
-    print('different:', n_different)
+    print('fusion:', n_fusion)
+    print('unmatched:', n_unmatched)
+    print('ambiguous same:', n_amb_same)
+    print('ambiguous fusion:', n_amb_fusion)
+    print('others:', n_others)
 
 
 if __name__ == '__main__':

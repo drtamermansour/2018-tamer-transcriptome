@@ -14,7 +14,7 @@ import shelve
 from collections import defaultdict
 import bbhash
 import numpy
-
+#import json
 
 def main():
     parser = argparse.ArgumentParser()
@@ -80,7 +80,7 @@ def main():
                     break
             
             if len(record.sequence) < args.ksize:
-                    break
+                    continue
    
             # get the family name
             family_name = record.name.split('|')[1]
@@ -107,13 +107,18 @@ def main():
                 cdbg_to_family_id[cdbg_id].add(family_id)
 
     mphf_filename = args.output + '.mphf'
-    array_filename = args.output + '.arr'
     x.save(mphf_filename)
 
+    array_filename = args.output + '.arr'
     with open(array_filename, 'wb') as fp:
         pickle.dump((mphf_to_kmer, mphf_to_cdbg, family_ids, cdbg_to_family_id),
                     fp)
 
+    family_ids_filename = args.output + '.ids'
+    with open(family_ids_filename, 'w') as f:
+        #f.write(json.dumps(family_ids))
+        for k, v in family_ids.items():
+            f.write(str(k) + '\t'+ str(v) + '\n')
 
 if __name__ == '__main__':
     main()
