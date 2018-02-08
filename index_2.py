@@ -33,8 +33,8 @@ def main():
     for n, record in enumerate(screed.open(args.unitigs)):
         if n % 10000 == 0:
             print('... cdbg', n)
-            if n > 20000 and 0:
-                break
+            #if n > 20000 and 0:
+            #    break
 
         all_kmers.extend(kh.get_kmer_hashes(record.sequence))
 
@@ -50,8 +50,8 @@ def main():
     for n, record in enumerate(screed.open(args.unitigs)):
         if n % 10000 == 0:
             print('... cdbg', n)
-            if n > 20000 and 0:
-                break
+            #if n > 20000 and 0:
+            #    break
 
         cdbg_id = int(record.name.split(' ')[0])
         kmers = kh.get_kmer_hashes(record.sequence)
@@ -76,8 +76,8 @@ def main():
             n += 1
             if n % 1000 == 0:
                 print('...', tr_filename, n)
-                if n > 5000 and 0:
-                    break
+                #if n > 5000 and 0:
+                #    break
             
             if len(record.sequence) < args.ksize:
                     continue

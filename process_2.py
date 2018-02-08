@@ -16,8 +16,8 @@ def main():
     parser.add_argument('-k', '--ksize', type=int, default=31)
     args = parser.parse_args()
 
-    if args.reads == '-':
-        args.reads = sys.stdin
+    #if args.reads == '-':
+    #    args.reads = sys.stdin
 
     kh = khmer.Nodetable(args.ksize, 1, 1)
 
@@ -62,8 +62,8 @@ def main():
         n += 1
         if n % 1000 == 0:
             print('...', n)
-            if n > 5000:
-                break
+            #if n > 5000:
+            #    break
 
         hashvals = kh.get_kmer_hashes(record.sequence)
         if len(hashvals) <= 1:
