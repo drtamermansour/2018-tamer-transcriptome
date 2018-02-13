@@ -174,7 +174,7 @@ def main():
                         flag = "unique"
                     else:
                         n_amb_same += 1
-                        flag = "ambiguous"
+                        flag = "ambiguous2"
                 else:# fusion to be resolved
                     shared_kmer = 1
                     gap_size = 0
@@ -223,6 +223,40 @@ def main():
         return flag, families, shared_kmers, gaps
 
     
+    def clearAmb(read):
+        flag = None
+        lf_ids = set()
+        families = []
+
+        hashvals = kh.get_kmer_hashes(read.sequence)
+
+        # find a matching k-mer at the beginning of the read
+        lf = hashvals[0]
+        lf_ids = get_kmer_to_family_ids(lf)
+        idx = 1
+        while idx < len(hashvals) and len(lf_ids) == 0:
+            lf = hashvals[idx]
+            lf_ids = get_kmer_to_family_ids(lf)
+            idx += 1
+
+        while idx < len(hashvals) and len(lf_ids) > 1:
+            temp = hashvals[idx]
+            temp_ids = get_kmer_to_family_ids(temp)
+            if len(temp_ids) > 0:
+                intersect_ids = lf_ids.intersection(temp_ids)
+                if len(intersect_ids) > 0:
+                    lf_ids = intersect_ids
+            idx += 1
+        
+        families.append(lf_ids)
+        if len(lf_ids) > 1:
+            flag = "ambiguous"
+        else:
+            assert len(lf_ids) == 1
+            flag = "unique"
+        
+        return flag, families
+
     fusion_filename = args.database + '_fusion.fa'
     fusion_fp = open(fusion_filename, 'w')
     fusionInfo_filename = args.database + '_fusion.info'
@@ -247,7 +281,7 @@ def main():
     family_names = dict(zip(family_ids.values(),family_ids.keys()))
     n = 0
     n_paired_fusion = 0
-    sameRef = ("unique","ambiguous")
+    sameRef = ("unique","ambiguous","ambiguous2")                  
     fusion = ("clear_fusion","ambig_fusion","multi_fusion")
     for filename, require_paired in files:
         with catch_io_errors(filename, fusion_fp, fusionInfo_fp, fusionCalc_fp, fusPair_fp, fusPairInfo_fp, fusPairCalc_fp,
@@ -326,6 +360,11 @@ def main():
                     elif flag0 in sameRef and flag1 in sameRef:
                         if len(families0[0].intersection(families1[0])) == 0:
                             n_paired_fusion += 1
+
+                            if flag0 == "ambiguous2":
+                                flag0, families0  = clearAmb(read0)
+                            if flag1 == "ambiguous2":
+                                flag1, families1  = clearAmb(read1)
 
                             if flag0 == "unique" and flag1 == "unique":
                                 fusion_class = "clear_fusion"
