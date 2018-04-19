@@ -1,9 +1,9 @@
 #! /usr/bin/env python
 """
 Example usage
-cat read_sample_n10000.fastq | python 2018-tamer-transcriptome/process_bimode.py -k 31 --force_single human_cds /dev/stdin > human_cds.process_2PE_single.log
-cat pair_sample_n10000.fasta | python 2018-tamer-transcriptome/process_bimode.py -k 31 --paired human_cds /dev/stdin > human_cds.process_2PE_paired.log
-cat pair_sample_n10000.fasta | python 2018-tamer-transcriptome/process_bimode.py -k 31 --paired -u read_sample_n10000.fastq human_cds /dev/stdin > human_cds.process_2PE_both.log
+cat read_sample_n10000.fastq | python process_bimode.py -k 31 --force_single human_cds /dev/stdin > human_cds.process_2PE_single.log
+cat pair_sample_n10000.fasta | python process_bimode.py -k 31 --paired human_cds /dev/stdin > human_cds.process_2PE_paired.log
+cat pair_sample_n10000.fasta | python process_bimode.py -k 31 --paired -u read_sample_n10000.fastq human_cds /dev/stdin > human_cds.process_2PE_both.log
 
 """
 import sys
